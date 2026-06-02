@@ -40,13 +40,14 @@ DEFAULT_VOICES = [
 
 
 def load_rows(csv_path: Path):
-    """Yield (code, sentence) pairs from the semicolon-delimited CSV."""
+    """Yield (stt, code, sentence) triples from the semicolon-delimited CSV."""
     with csv_path.open(encoding="utf-8-sig", newline="") as f:
         for row in csv.DictReader(f, delimiter=";"):
+            stt = (row.get("STT") or "").strip()
             code = (row.get("CODE") or "").strip().lstrip("#")
             sentence = (row.get("SENTENCE") or "").strip()
-            if code and sentence:
-                yield code, sentence
+            if code and sentence and stt.isdigit():
+                yield int(stt), code, sentence
 
 
 def synthesize(pipeline, sentence: str, voice: str, speed: float) -> np.ndarray:
@@ -98,8 +99,8 @@ def main() -> int:
 
     total = len(rows)
     generated = skipped = 0
-    for i, (code, sentence) in enumerate(rows):
-        dest = args.out / f"{code}.mp3"
+    for i, (stt, code, sentence) in enumerate(rows):
+        dest = args.out / f"{stt:03d}-{code}.mp3"
         if dest.exists() and not args.force:
             skipped += 1
             continue
