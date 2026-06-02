@@ -1,3 +1,9 @@
+## Python / uv environment:
+.venv/
+
+## Generated dictation audio (regenerate with generate-audio.py):
+audio/
+
 ## Core latex/pdflatex auxiliary files:
 *.aux
 *.lof
