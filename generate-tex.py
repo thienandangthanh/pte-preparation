@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """Convert dictation-list.csv -> dictation-list.tex (A4, single column, printable).
 Keeps only SENTENCE and MEANING (plus a small index for reference)."""
+import argparse
 import csv
 from pathlib import Path
 
-SRC = Path(__file__).parent / "dictation-list.csv"
-OUT = Path(__file__).parent / "dictation-list.tex"
+DEFAULT_CSV = Path(__file__).parent / "dictation-list.csv"
+DEFAULT_OUT = Path(__file__).parent / "dictation-list.tex"
 
 # LaTeX special-character escaping (text mode, XeLaTeX/unicode)
 _ESCAPE = {
@@ -29,8 +30,8 @@ def escape(text: str) -> str:
     return "".join(out)
 
 
-def load_rows():
-    with SRC.open(encoding="utf-8-sig", newline="") as f:
+def load_rows(src):
+    with src.open(encoding="utf-8-sig", newline="") as f:
         reader = csv.DictReader(f, delimiter=";")
         for row in reader:
             sentence = (row.get("SENTENCE") or "").strip()
@@ -95,7 +96,12 @@ FOOTER = r"""\end{longtable}
 
 
 def main():
-    rows = list(load_rows())
+    parser = argparse.ArgumentParser(description="Convert a dictation CSV to a printable LaTeX table.")
+    parser.add_argument("--csv", type=Path, default=DEFAULT_CSV, help="Source CSV path")
+    parser.add_argument("--out", type=Path, default=DEFAULT_OUT, help="Output .tex path")
+    args = parser.parse_args()
+
+    rows = list(load_rows(args.csv))
     lines = [PREAMBLE]
     for i, (sentence, meaning) in enumerate(rows, start=1):
         shade = r"\rowcolor{rowgray}" if i % 2 == 0 else ""
@@ -103,8 +109,8 @@ def main():
             f"{shade}{i} & {escape(sentence)} & {escape(meaning)} \\\\"
         )
     lines.append(FOOTER)
-    OUT.write_text("\n".join(lines), encoding="utf-8")
-    print(f"Wrote {OUT} with {len(rows)} entries.")
+    args.out.write_text("\n".join(lines), encoding="utf-8")
+    print(f"Wrote {args.out} with {len(rows)} entries.")
 
 
 if __name__ == "__main__":
